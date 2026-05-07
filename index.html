@@ -11,6 +11,7 @@
             color: #24292f;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             display: flex;
+            justify-content: center; /* 추가: 화면 중앙 정렬 */
             align-items: center;
             min-height: 100vh;
             margin: 0;
@@ -18,11 +19,12 @@
             box-sizing: border-box;
         }
 
-        /* 캘린더 전체 컨테이너 (가로 스크롤) */
+        /* 캘린더 전체 컨테이너 (4달씩 3줄 그리드) */
         #calendar-container {
-            display: flex;
-            gap: 30px; /* 월(Month) 사이의 간격을 띄움 */
-            padding: 25px;
+            display: grid;
+            grid-template-columns: repeat(4, max-content); /* 가로 4개씩 고정 배치 */
+            gap: 40px 35px; /* 위아래 간격 40px, 좌우 간격 35px */
+            padding: 30px;
             border: 1px solid #d0d7de;
             border-radius: 6px;
             background-color: #ffffff;
