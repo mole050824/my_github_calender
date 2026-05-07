@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Style Calendar</title>
+    <style>
+        body {
+            background-color: #0d1117; /* GitHub 다크모드 배경 */
+            color: #c9d1d9; /* 기본 텍스트 색상 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 캘린더 전체 컨테이너 (가로 스크롤 가능) */
+        #calendar-container {
+            display: flex;
+            gap: 25px; /* 월(Month) 사이의 간격 (조금씩 띄우기) */
+            padding: 20px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            background-color: #161b22;
+            overflow-x: auto;
+        }
+
+        .month-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .month-title {
+            font-size: 12px;
+            padding-left: 2px;
+        }
+
+        /* 7행(일~토) x N열(주차) 그리드 */
+        .month-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 14px); /* 세로 7칸 */
+            grid-auto-columns: 14px; /* 가로는 주차별로 자동 생성 */
+            grid-auto-flow: column; /* 위에서 아래로, 그 다음 오른쪽으로 채움 */
+            gap: 4px; /* 칸 사이의 간격 */
+        }
+
+        /* 개별 날짜 칸 */
+        .cell {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            background-color: #161b22; /* 기본 칸(미래) 색상 */
+            border: 1px solid rgba(255, 255, 255, 0.05); /* 칸 테두리 */
+            outline: 1px solid rgba(27, 31, 35, 0.06);
+            outline-offset: -1px;
+        }
+
+        /* 빈 칸 (해당 월의 시작일 전까지의 여백) */
+        .cell.empty {
+            background-color: transparent;
+            border: none;
+            outline: none;
+        }
+
+        /* 툴팁 표시용 */
+        .cell:not(.empty):hover {
+            outline: 1px solid #c9d1d9;
+            cursor: pointer;
+        }
+
+        /* 지난 날짜들 (GitHub 초록색 팔레트) */
+        .cell.level-1 { background-color: #0e4429; }
+        .cell.level-2 { background-color: #006d32; }
+        .cell.level-3 { background-color: #26a641; }
+        .cell.level-4 { background-color: #39d353; }
+        
+        /* 미래 날짜들 */
+        .cell.future { background-color: #2d333b; }
+    </style>
+</head>
+<body>
+
+    <div id="calendar-container"></div>
+
+    <script>
+        const container = document.getElementById('calendar-container');
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        
+        // 날짜의 시/분/초를 초기화하여 순수 날짜만 비교하기 위한 변수
+        today.setHours(0, 0, 0, 0);
+
+        // 잔디 색상 레벨 (랜덤 적용을 위함)
+        const greenLevels = ['level-1', 'level-2', 'level-3', 'level-4'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        for (let month = 0; month < 12; month++) {
+            // 월별 래퍼 생성
+            const monthWrapper = document.createElement('div');
+            monthWrapper.className = 'month-wrapper';
+
+            // 월 제목 추가
+            const title = document.createElement('div');
+            title.className = 'month-title';
+            title.innerText = months[month];
+            monthWrapper.appendChild(title);
+
+            // 월별 그리드 생성
+            const grid = document.createElement('div');
+            grid.className = 'month-grid';
+
+            // 해당 월의 첫 번째 날의 요일 (0: 일요일, 6: 토요일)과 총 일수 계산
+            const firstDayOfWeek = new Date(currentYear, month, 1).getDay();
+            const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
+
+            // 1일이 시작하기 전까지 빈 칸 채우기 (GitHub는 일요일부터 시작하여 아래로 내려감)
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'cell empty';
+                grid.appendChild(emptyCell);
+            }
+
+            // 1일부터 마지막 일까지 칸 생성
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cellDate = new Date(currentYear, month, day);
+                cellDate.setHours(0, 0, 0, 0);
+
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                // 마우스 호버 시 날짜가 보이도록 title 속성 추가
+                const formattedDate = `${currentYear}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                cell.title = formattedDate;
+
+                if (cellDate < today) {
+                    // 과거 날짜: 1~4 레벨의 초록색을 랜덤하게 부여하여 잔디 느낌을 살림
+                    const randomLevel = greenLevels[Math.floor(Math.random() * greenLevels.length)];
+                    cell.classList.add(randomLevel);
+                } else if (cellDate.getTime() === today.getTime()) {
+                    // 오늘: 가장 진한 초록색
+                    cell.classList.add('level-4');
+                } else {
+                    // 미래 날짜
+                    cell.classList.add('future');
+                }
+
+                grid.appendChild(cell);
+            }
+
+            monthWrapper.appendChild(grid);
+            container.appendChild(monthWrapper);
+        }
+    </script>
+
+</body>
+</html>
